@@ -9,7 +9,7 @@ from datetime import datetime
 # CONFIG
 # =========================
 
-EXCHANGE_URL = "https://cdn.moneyconvert.net/api/latest.json"
+EXCHANGE_URL = "https://api.exchangerate-api.com/v4/latest/USD"
 
 BOT_TOKEN = "8279723703:AAGpbxC7gRPbUrWEV7WMMC5GmVOL2eV5NOA"  # 🔐 Variable de entorno
 CHAT_IDS = ["1180916427", "6158759375"]
@@ -27,18 +27,13 @@ headers = {
 
 def get_usd_dop():
     try:
-        response = requests.get(EXCHANGE_URL, headers=headers, timeout=5)
-
-        if response.status_code != 200:
-            raise Exception(f"HTTP {response.status_code}")
-
-        if not response.text:
-            raise Exception("Respuesta vacía de la API")
+        response = requests.get(EXCHANGE_URL, timeout=5)
+        response.raise_for_status()
 
         data = response.json()
 
         if "rates" not in data or "DOP" not in data["rates"]:
-            raise Exception("Formato inesperado de API")
+            raise Exception("Formato inesperado en API")
 
         return float(data["rates"]["DOP"])
 
