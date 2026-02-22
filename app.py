@@ -63,6 +63,9 @@ def send_telegram_alert(message):
         except Exception as e:
             st.warning(f"Error Telegram: {e}")
 
+if "last_hourly_alert" not in st.session_state:
+    st.session_state.last_hourly_alert = 0
+
 # =========================
 # INTERFAZ
 # =========================
@@ -112,6 +115,18 @@ if rate > threshold and not st.session_state.alert_sent:
 if rate <= threshold:
     st.session_state.alert_sent = False
 
+# =========================
+# ALERTA CADA HORA
+# =========================
+
+current_time = time.time()
+
+# 3600 segundos = 1 hora
+if current_time - st.session_state.last_hourly_alert >= 60:
+    send_telegram_alert(
+        f"🕐 REPORTE HORARIO\nUSD/DOP actual: RD${rate:.2f}"
+    )
+    st.session_state.last_hourly_alert = current_time
 # =========================
 # AUTO REFRESH
 # =========================
