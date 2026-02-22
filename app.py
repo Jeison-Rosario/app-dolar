@@ -9,7 +9,7 @@ from datetime import datetime
 # CONFIG
 # =========================
 
-EXCHANGE_URL = "https://api.frankfurter.app/latest?from=USD&to=DOP"
+EXCHANGE_URL = "https://cdn.moneyconvert.net/api/latest.json"
 
 BOT_TOKEN = "8279723703:AAGpbxC7gRPbUrWEV7WMMC5GmVOL2eV5NOA"  # 🔐 Variable de entorno
 CHAT_IDS = ["1180916427", "6158759375"]
