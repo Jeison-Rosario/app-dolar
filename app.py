@@ -9,7 +9,7 @@ from datetime import datetime
 # CONFIG
 # =========================
 
-EXCHANGE_URL = "https://cdn.moneyconvert.net/api/latest.json"
+EXCHANGE_URL = "https://api.exchangerate-api.com/v4/latest/USD"
 
 BOT_TOKEN = "8279723703:AAGpbxC7gRPbUrWEV7WMMC5GmVOL2eV5NOA"  # 🔐 Variable de entorno
 CHAT_IDS = ["1180916427", "6158759375"]
