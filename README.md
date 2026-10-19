@@ -1,6 +1,6 @@
-# Monitor USD/DOP
+# Conversor de divisas
 
-Demo de Python y Streamlit: consulta una tasa de referencia USD/DOP, convierte importes y permite exportar hasta 50 lecturas de la sesión. No necesita MySQL. La interfaz se adapta mediante componentes nativos de Streamlit.
+Demo de Python y Streamlit: convierte entre las monedas disponibles del proveedor con selectores de origen/destino e intercambio rápido; empieza en USD → DOP. Convierte importes y permite exportar hasta 50 lecturas de la sesión. No necesita MySQL. La interfaz se adapta mediante componentes nativos de Streamlit.
 
 ## Fuente y límites
 
@@ -32,7 +32,7 @@ python3 -m venv .venv
 
 Crear un sitio de tipo **programa definido por el usuario / comando personalizado** que ejecute el servidor HTTP de Streamlit (no WSGI). Dirección `bookapp.alwaysdata.net/app-dolar`, directorio de trabajo relativo **`apps/app-dolar`**, comando **`/home/bookapp/apps/app-dolar/.venv/bin/python /home/bookapp/apps/app-dolar/server.py`**, variable **`BASE_PATH=/app-dolar`**. **Desactivar Trim path/recortar ruta**, pues Streamlit gestiona el prefijo de forma nativa. No sobrescribir IP, HOST ni PORT. Mantener las protecciones CORS y XSRF predeterminadas. El proxy debe admitir WebSockets.
 
-Comprobar `/app-dolar/` y `/app-dolar/_stcore/health`, conversión, CSV y funcionamiento con dos sesiones. El despliegue real y la revisión visual quedan pendientes. Vigilar RAM: Streamlit y pandas pueden consumir más memoria que los proyectos Node. Que el panel permita otro sitio no garantiza capacidad para cuatro aplicaciones. Si aparecen fallos, detener solo el nuevo sitio y revisar el consumo. No se ha contratado ningún plan adicional.
+Comprobar `/app-dolar/` y `/app-dolar/_stcore/health`, conversión USD/DOP y EUR/DOP, intercambio de monedas, CSV y funcionamiento con dos sesiones. El despliegue real y la revisión visual quedan pendientes. Vigilar RAM: Streamlit y pandas pueden consumir más memoria que los proyectos Node. Que el panel permita otro sitio no garantiza capacidad para cuatro aplicaciones. Si aparecen fallos, detener solo el nuevo sitio y revisar el consumo. No se ha contratado ningún plan adicional.
 
 ## Telegram
 
@@ -43,3 +43,9 @@ Esta versión pública **no envía mensajes** y elimina el token y los destinata
 `app.py`: interfaz; `rates.py`: validación, caché y recuperación; `server.py`: arranque; `test_rates.py`: pruebas sin consultas externas ni mensajes; `.env.example`: configuración no sensible.
 
 Versiones comprobadas en Python 3.12: `requirements.lock.txt`. Para reproducirlas usar `pip install -r requirements.lock.txt`; `requirements.txt` mantiene los rangos compatibles para otras versiones de Python.
+
+## Conversión entre monedas
+
+Una sola consulta obtiene todas las tasas respecto a USD. Se calcula `importe × tasa_destino / tasa_origen`; cambiar el par no hace una petición adicional. Solo se ofrecen códigos presentes en la respuesta válida del proveedor (por ejemplo USD, DOP, EUR, MXN y COP, según disponibilidad). Se rechazan tasas no finitas, cero, negativas y respuestas cuya base USD no sea 1.
+
+Las lecturas están limitadas a 50 en total por sesión; el gráfico filtra el par actual para evitar mezclar escalas. El CSV incluye origen, destino, tasa, hora de lectura y actualización del proveedor. Una conversión a la misma moneda conserva el importe. No se incluyen comisiones ni tasas bancarias.
