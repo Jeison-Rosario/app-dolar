@@ -34,10 +34,6 @@ Crear un sitio de tipo **programa definido por el usuario / comando personalizad
 
 Comprobar `/app-dolar/` y `/app-dolar/_stcore/health`, conversión USD/DOP y EUR/DOP, intercambio de monedas, CSV y funcionamiento con dos sesiones. El despliegue real y la revisión visual quedan pendientes. Vigilar RAM: Streamlit y pandas pueden consumir más memoria que los proyectos Node. Que el panel permita otro sitio no garantiza capacidad para cuatro aplicaciones. Si aparecen fallos, detener solo el nuevo sitio y revisar el consumo. No se ha contratado ningún plan adicional.
 
-## Telegram
-
-Esta versión pública **no envía mensajes** y elimina el token y los destinatarios del código. La integración anterior debe considerarse desactivada. El propietario debe revocar el token antiguo con BotFather: quitarlo del archivo actual no lo elimina del historial de Git. No publicar un nuevo token ni pegarlo en conversaciones. Para recuperar avisos en el futuro, crear un proceso privado programado, con credenciales de entorno y deduplicación persistente; nunca enviar desde las sesiones públicas.
-
 ## Estructura
 
 `app.py`: interfaz; `rates.py`: validación, caché y recuperación; `server.py`: arranque; `test_rates.py`: pruebas sin consultas externas ni mensajes; `.env.example`: configuración no sensible.

@@ -1,4 +1,3 @@
-"""Public multi-currency demo. Does not send Telegram messages."""
 from datetime import datetime, timezone
 import pandas as pd
 import streamlit as st
@@ -63,4 +62,3 @@ def dashboard():
 
 dashboard()
 st.markdown("[Rates By Exchange Rate API](https://www.exchangerate-api.com)")
-st.caption("Demo sin base de datos. Las lecturas desaparecen al reiniciar la sesión. Los avisos de Telegram están desactivados.")
