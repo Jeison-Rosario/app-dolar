@@ -1,139 +1,47 @@
-import streamlit as st
-import requests
-import time
+"""Public USD/DOP demo. Does not send Telegram messages."""
+from datetime import datetime, timezone
 import pandas as pd
-import os
-from datetime import datetime
+import streamlit as st
+from rates import RateCache, RateError
 
-# =========================
-# CONFIG
-# =========================
+st.set_page_config(page_title="Monitor USD/DOP | Jeison Rosario", page_icon="💱", layout="centered")
 
-EXCHANGE_URL = "https://api.exchangerate-api.com/v4/latest/USD"
+@st.cache_resource
+def shared_rates():
+    return RateCache()
 
-BOT_TOKEN = "8279723703:AAGpbxC7gRPbUrWEV7WMMC5GmVOL2eV5NOA"  # 🔐 Variable de entorno
-CHAT_IDS = ["1180916427", "6158759375"]
+st.caption("JEISON ROSARIO · PYTHON + STREAMLIT")
+st.title("Monitor USD → DOP")
+st.write("Consulta una tasa de referencia y convierte dólares estadounidenses a pesos dominicanos.")
+st.info("El proveedor gratuito actualiza sus tasas una vez al día. Esta referencia no representa la tasa de compra o venta de un banco.")
+auto = st.checkbox("Actualizar la pantalla cada minuto", value=False)
 
-threshold = 60
-interval = 10
-
-headers = {
-    "User-Agent": "Mozilla/5.0"
-}
-
-# =========================
-# FUNCIONES
-# =========================
-
-def get_usd_dop():
+@st.fragment(run_every=60 if auto else None)
+def dashboard():
+    st.button("Consultar", help="Utiliza la caché compartida; no fuerza una consulta externa.")
     try:
-        response = requests.get(EXCHANGE_URL, timeout=5)
-        response.raise_for_status()
-
-        data = response.json()
-
-        if "rates" not in data or "DOP" not in data["rates"]:
-            raise Exception("Formato inesperado en API")
-
-        return float(data["rates"]["DOP"])
-
-    except Exception as e:
-        st.error(f"Error obteniendo tasa: {e}")
-        return None
-
-
-def send_telegram_alert(message):
-    if not BOT_TOKEN:
-        st.warning("BOT_TOKEN no configurado en variables de entorno")
+        snapshot = shared_rates().get()
+    except RateError as exc:
+        st.error(str(exc))
         return
+    if snapshot.stale:
+        st.warning("El proveedor no respondió. Se muestra la última tasa disponible en memoria.")
+    st.metric("DOP por 1 USD", f"RD$ {snapshot.rate:,.4f}")
+    st.caption("Actualización del proveedor (UTC): " + snapshot.updated.strftime("%Y-%m-%d %H:%M"))
+    st.caption("Última consulta exitosa (UTC): " + snapshot.fetched.strftime("%Y-%m-%d %H:%M"))
+    amount = st.number_input("Cantidad en USD", min_value=0.0, max_value=1_000_000_000.0, value=100.0, step=10.0)
+    st.success(f"{amount:,.2f} USD ≈ RD$ {amount * snapshot.rate:,.2f}")
+    history = st.session_state.setdefault("readings", [])
+    minute = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+    if not history or history[-1]["Hora UTC"] != minute:
+        history.append({"Hora UTC": minute, "DOP por USD": snapshot.rate})
+        del history[:-50]
+    st.subheader("Lecturas de esta sesión")
+    st.caption("Máximo 50 observaciones. No es un historial de movimientos del mercado; varias lecturas pueden tener la misma tasa.")
+    frame = pd.DataFrame(history).set_index("Hora UTC")
+    st.line_chart(frame)
+    st.download_button("Descargar lecturas CSV", frame.to_csv().encode("utf-8"), "lecturas-usd-dop.csv", "text/csv")
 
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-
-    for chat_id in CHAT_IDS:
-        try:
-            payload = {
-                "chat_id": chat_id,
-                "text": message
-            }
-            response = requests.post(url, data=payload, timeout=5)
-
-            if response.status_code != 200:
-                st.warning(f"Error enviando a chat {chat_id}")
-
-        except Exception as e:
-            st.warning(f"Error Telegram: {e}")
-
-if "last_hourly_alert" not in st.session_state:
-    st.session_state.last_hourly_alert = 0
-
-# =========================
-# INTERFAZ
-# =========================
-
-st.title("📊 Monitor USD → DOP en Tiempo Real")
-
-if "data" not in st.session_state:
-    st.session_state.data = []
-
-if "alert_sent" not in st.session_state:
-    st.session_state.alert_sent = False
-
-rate = get_usd_dop()
-
-# Si falla la API no rompemos la app
-if rate is None:
-    st.stop()
-
-now = datetime.now()
-
-# Guardar histórico
-st.session_state.data.append({"time": now, "rate": rate})
-
-# Limitar historial
-if len(st.session_state.data) > 50:
-    st.session_state.data.pop(0)
-
-df = pd.DataFrame(st.session_state.data)
-
-# Gráfico
-st.line_chart(df.set_index("time"))
-
-# Métrica actual
-st.metric("Precio actual USD/DOP", f"RD${rate:.2f}")
-
-# =========================
-# ALERTA
-# =========================
-
-if rate > threshold and not st.session_state.alert_sent:
-    st.warning("🚨 El dólar superó el umbral")
-    send_telegram_alert(
-        f"🚨 ALERTA 🚨\nUSD superó RD${threshold}\nValor actual: RD${rate:.2f}"
-    )
-    st.session_state.alert_sent = True
-
-if rate <= threshold:
-    st.session_state.alert_sent = False
-
-# =========================
-# ALERTA CADA HORA
-# =========================
-
-current_time = time.time()
-
-# 3600 segundos = 1 hora
-if current_time - st.session_state.last_hourly_alert >= 60:
-    send_telegram_alert(
-        f"🕐 REPORTE HORARIO\nUSD/DOP actual: RD${rate:.2f}"
-    )
-    st.session_state.last_hourly_alert = current_time
-# =========================
-# AUTO REFRESH
-# =========================
-
-if "last_refresh" not in st.session_state:
-    st.session_state.last_refresh = time.time()
-
-if time.time() - st.session_state.last_refresh > interval:
-    st.session_state.last_refresh = time.time()
-    st.rerun()
+dashboard()
+st.markdown("[Rates By Exchange Rate API](https://www.exchangerate-api.com)")
+st.caption("Demo sin base de datos. Las lecturas desaparecen al reiniciar la sesión. Los avisos de Telegram están desactivados.")
