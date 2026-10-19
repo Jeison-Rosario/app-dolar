@@ -29,12 +29,12 @@ class RatesTest(unittest.TestCase):
     @patch('rates.requests.get')
     def test_provider_validation(self, get):
         response = get.return_value
-        response.json.return_value = {'result':'success','base_code':'USD','conversion_rates':{'USD':1,'DOP':60.5},'time_last_update_unix':1700000000}
-        self.assertEqual(fetch_rate().rates["DOP"], 60.5)
+        response.json.return_value = {'result':'success','base_code':'USD','rates':{'USD':1,'DOP':61.266775,'EUR':0.890861,'COP':3174.489272},'time_last_update_unix':1700000000}
+        self.assertEqual(fetch_rate().rates["DOP"], 61.266775)
         for value in [-1, float('nan'), True, 'bad']:
-            response.json.return_value['conversion_rates']['DOP'] = value
+            response.json.return_value['rates']['DOP'] = value
             with self.assertRaises(RateError): fetch_rate()
-        for payload in [[], None, {'result':'success','base_code':'USD','conversion_rates':{'EUR':0.8},'time_last_update_unix':1700000000}, {'result':'success','base_code':'USD','conversion_rates':{'USD':2},'time_last_update_unix':1700000000}]:
+        for payload in [[], None, {'result':'success','base_code':'USD','rates':{'EUR':0.8},'time_last_update_unix':1700000000}, {'result':'success','base_code':'USD','rates':{'USD':2},'time_last_update_unix':1700000000}]:
             response.json.return_value = payload
             with self.assertRaises(RateError): fetch_rate()
         response.json.return_value = {'result':'error'}
