@@ -28,7 +28,7 @@ def fetch_rate():
         data = response.json()
         if not isinstance(data, dict) or data.get("result") != "success" or data.get("base_code") != "USD":
             raise ValueError("Invalid response")
-        raw_rates = data["conversion_rates"]
+        raw_rates = data["rates"]
         if not isinstance(raw_rates, dict) or not raw_rates:
             raise ValueError("Invalid rates")
         rates = {}
